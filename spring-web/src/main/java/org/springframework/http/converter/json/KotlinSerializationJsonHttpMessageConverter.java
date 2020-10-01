@@ -27,6 +27,7 @@ import kotlinx.serialization.SerializationException;
 import kotlinx.serialization.SerializersKt;
 import kotlinx.serialization.json.Json;
 
+import org.springframework.core.GenericTypeResolver;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.HttpOutputMessage;
 import org.springframework.http.MediaType;
@@ -38,14 +39,17 @@ import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.StreamUtils;
 
 /**
- * Implementation of {@link org.springframework.http.converter.HttpMessageConverter} that can read and write JSON using
+ * Implementation of {@link org.springframework.http.converter.HttpMessageConverter}
+ * that can read and write JSON using
  * <a href="https://github.com/Kotlin/kotlinx.serialization">kotlinx.serialization</a>.
  *
- * <p>This converter can be used to bind {@code @Serializable} Kotlin classes. It supports {@code application/json} and
- * {@code application/*+json} with various character sets, {@code UTF-8} being the default.
+ * <p>This converter can be used to bind {@code @Serializable} Kotlin classes.
+ * It supports {@code application/json} and {@code application/*+json} with
+ * various character sets, {@code UTF-8} being the default.
  *
  * @author Andreas Ahlenstorf
  * @author Sebastien Deleuze
+ * @author Juergen Hoeller
  * @since 5.3
  */
 public class KotlinSerializationJsonHttpMessageConverter extends AbstractGenericHttpMessageConverter<Object> {
@@ -55,6 +59,7 @@ public class KotlinSerializationJsonHttpMessageConverter extends AbstractGeneric
 	private static final Map<Type, KSerializer<Object>> serializerCache = new ConcurrentReferenceHashMap<>();
 
 	private final Json json;
+
 
 	/**
 	 * Construct a new {@code KotlinSerializationJsonHttpMessageConverter} with the default configuration.
@@ -71,10 +76,11 @@ public class KotlinSerializationJsonHttpMessageConverter extends AbstractGeneric
 		this.json = json;
 	}
 
+
 	@Override
 	protected boolean supports(Class<?> clazz) {
 		try {
-			resolve(clazz);
+			serializer(clazz);
 			return true;
 		}
 		catch (Exception ex) {
@@ -83,17 +89,27 @@ public class KotlinSerializationJsonHttpMessageConverter extends AbstractGeneric
 	}
 
 	@Override
-	protected Object readInternal(Class<?> clazz, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
-		return this.read(clazz, null, inputMessage);
+	public final Object read(Type type, @Nullable Class<?> contextClass, HttpInputMessage inputMessage)
+			throws IOException, HttpMessageNotReadableException {
+
+		return decode(serializer(GenericTypeResolver.resolveType(type, contextClass)), inputMessage);
 	}
 
 	@Override
-	public Object read(Type type, @Nullable Class<?> contextClass, HttpInputMessage inputMessage) throws IOException, HttpMessageNotReadableException {
+	protected final Object readInternal(Class<?> clazz, HttpInputMessage inputMessage)
+			throws IOException, HttpMessageNotReadableException {
+
+		return decode(serializer(clazz), inputMessage);
+	}
+
+	private Object decode(KSerializer<Object> serializer, HttpInputMessage inputMessage)
+			throws IOException, HttpMessageNotReadableException {
+
 		MediaType contentType = inputMessage.getHeaders().getContentType();
 		String jsonText = StreamUtils.copyToString(inputMessage.getBody(), getCharsetToUse(contentType));
 		try {
 			// TODO Use stream based API when available
-			return this.json.decodeFromString(resolve(type), jsonText);
+			return this.json.decodeFromString(serializer, jsonText);
 		}
 		catch (SerializationException ex) {
 			throw new HttpMessageNotReadableException("Could not read JSON: " + ex.getMessage(), ex, inputMessage);
@@ -101,19 +117,17 @@ public class KotlinSerializationJsonHttpMessageConverter extends AbstractGeneric
 	}
 
 	@Override
-	protected void writeInternal(Object o, HttpOutputMessage outputMessage) throws HttpMessageNotWritableException {
-		try {
-			this.writeInternal(o, o.getClass(), outputMessage);
-		}
-		catch (IOException ex) {
-			throw new HttpMessageNotWritableException("Could not write JSON: " + ex.getMessage(), ex);
-		}
+	protected final void writeInternal(Object object, @Nullable Type type, HttpOutputMessage outputMessage)
+			throws IOException, HttpMessageNotWritableException {
+
+		encode(object, serializer(type != null ? type : object.getClass()), outputMessage);
 	}
 
-	@Override
-	protected void writeInternal(Object o, @Nullable Type type, HttpOutputMessage outputMessage) throws IOException, HttpMessageNotWritableException {
+	private void encode(Object object, KSerializer<Object> serializer, HttpOutputMessage outputMessage)
+			throws IOException, HttpMessageNotWritableException {
+
 		try {
-			String json = this.json.encodeToString(resolve(type), o);
+			String json = this.json.encodeToString(serializer, object);
 			MediaType contentType = outputMessage.getHeaders().getContentType();
 			outputMessage.getBody().write(json.getBytes(getCharsetToUse(contentType)));
 			outputMessage.getBody().flush();
@@ -134,16 +148,14 @@ public class KotlinSerializationJsonHttpMessageConverter extends AbstractGeneric
 	}
 
 	/**
-	 * Tries to find a serializer that can marshall or unmarshall instances of the given type using
-	 * kotlinx.serialization. If no serializer can be found, an exception is thrown.
-	 * <p>
-	 * Resolved serializers are cached and cached results are returned on successive calls.
-	 *
-	 * @param type to find a serializer for.
-	 * @return resolved serializer for the given type.
-	 * @throws RuntimeException if no serializer supporting the given type can be found.
+	 * Tries to find a serializer that can marshall or unmarshall instances of the given type
+	 * using kotlinx.serialization. If no serializer can be found, an exception is thrown.
+	 * <p>Resolved serializers are cached and cached results are returned on successive calls.
+	 * @param type the type to find a serializer for
+	 * @return a resolved serializer for the given type
+	 * @throws RuntimeException if no serializer supporting the given type can be found
 	 */
-	private KSerializer<Object> resolve(Type type) {
+	private KSerializer<Object> serializer(Type type) {
 		KSerializer<Object> serializer = serializerCache.get(type);
 		if (serializer == null) {
 			serializer = SerializersKt.serializer(type);
@@ -151,4 +163,5 @@ public class KotlinSerializationJsonHttpMessageConverter extends AbstractGeneric
 		}
 		return serializer;
 	}
+
 }
