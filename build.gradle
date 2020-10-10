@@ -25,9 +25,9 @@ configure(allprojects) { project ->
 
 	dependencyManagement {
 		imports {
-			mavenBom "com.fasterxml.jackson:jackson-bom:2.11.2"
+			mavenBom "com.fasterxml.jackson:jackson-bom:2.11.3"
 			mavenBom "io.netty:netty-bom:4.1.52.Final"
-			mavenBom "io.projectreactor:reactor-bom:2020.0.0-RC1"
+			mavenBom "io.projectreactor:reactor-bom:2020.0.0-SNAPSHOT"
 			mavenBom "io.r2dbc:r2dbc-bom:Arabba-SR7"
 			mavenBom "io.rsocket:rsocket-bom:1.1.0-M2"
 			mavenBom "org.eclipse.jetty:jetty-bom:9.4.31.v20200723"
@@ -53,7 +53,7 @@ configure(allprojects) { project ->
 				entry 'aspectjtools'
 				entry 'aspectjweaver'
 			}
-			dependencySet(group: 'org.codehaus.groovy', version: '3.0.5') {
+			dependencySet(group: 'org.codehaus.groovy', version: '3.0.6') {
 				entry 'groovy'
 				entry 'groovy-jsr223'
 				entry 'groovy-templates'  // requires findbugs for warning-free compilation
@@ -64,7 +64,7 @@ configure(allprojects) { project ->
 			dependency "io.reactivex:rxjava:1.3.8"
 			dependency "io.reactivex:rxjava-reactive-streams:1.2.1"
 			dependency "io.reactivex.rxjava2:rxjava:2.2.19"
-			dependency "io.reactivex.rxjava3:rxjava:3.0.6"
+			dependency "io.reactivex.rxjava3:rxjava:3.0.7"
 			dependency "io.projectreactor.tools:blockhound:1.0.2.RELEASE"
 
 			dependency "com.caucho:hessian:4.0.63"
@@ -89,8 +89,9 @@ configure(allprojects) { project ->
 			}
 			dependency "org.ogce:xpp3:1.1.6"
 			dependency "org.yaml:snakeyaml:1.26"
-			dependencySet(group: 'org.jetbrains.kotlinx', version: '1.0.0-RC') {
+			dependencySet(group: 'org.jetbrains.kotlinx', version: '1.0.0') {
 				entry 'kotlinx-serialization-core'
+				entry 'kotlinx-serialization-json'
 			}
 
 			dependency "com.h2database:h2:1.4.200"
@@ -122,9 +123,9 @@ configure(allprojects) { project ->
 			dependency "net.sf.ehcache:ehcache:2.10.6"
 			dependency "org.ehcache:jcache:1.0.1"
 			dependency "org.ehcache:ehcache:3.4.0"
-			dependency "org.hibernate:hibernate-core:5.4.21.Final"
-			dependency "org.hibernate:hibernate-validator:6.1.5.Final"
-			dependency "org.webjars:webjars-locator-core:0.45"
+			dependency "org.hibernate:hibernate-core:5.4.22.Final"
+			dependency "org.hibernate:hibernate-validator:6.1.6.Final"
+			dependency "org.webjars:webjars-locator-core:0.46"
 			dependency "org.webjars:underscorejs:1.8.3"
 
 			dependencySet(group: 'org.apache.tomcat', version: '9.0.38') {
@@ -138,7 +139,7 @@ configure(allprojects) { project ->
 				entry 'tomcat-embed-core'
 				entry 'tomcat-embed-websocket'
 			}
-			dependencySet(group: 'io.undertow', version: '2.2.0.Final') {
+			dependencySet(group: 'io.undertow', version: '2.2.2.Final') {
 				entry 'undertow-core'
 				entry('undertow-websockets-jsr') {
 					exclude group: "org.jboss.spec.javax.websocket", name: "jboss-websocket-api_1.1_spec"
@@ -159,8 +160,8 @@ configure(allprojects) { project ->
 			dependency("org.apache.httpcomponents:httpasyncclient:4.1.4") {
 				exclude group: "commons-logging", name: "commons-logging"
 			}
-			dependency 'org.apache.httpcomponents.client5:httpclient5:5.0.1'
-			dependency 'org.apache.httpcomponents.core5:httpcore5-reactive:5.0.1'
+			dependency 'org.apache.httpcomponents.client5:httpclient5:5.0.3'
+			dependency 'org.apache.httpcomponents.core5:httpcore5-reactive:5.0.3'
 			dependency "org.eclipse.jetty:jetty-reactive-httpclient:1.1.4"
 
 			dependency "org.jruby:jruby:9.2.13.0"
@@ -204,10 +205,10 @@ configure(allprojects) { project ->
 			}
 			dependency "io.mockk:mockk:1.10.0"
 
-			dependency("net.sourceforge.htmlunit:htmlunit:2.43.0") {
+			dependency("net.sourceforge.htmlunit:htmlunit:2.44.0") {
 				exclude group: "commons-logging", name: "commons-logging"
 			}
-			dependency("org.seleniumhq.selenium:htmlunit-driver:2.43.1") {
+			dependency("org.seleniumhq.selenium:htmlunit-driver:2.44.0") {
 				exclude group: "commons-logging", name: "commons-logging"
 			}
 			dependency("org.seleniumhq.selenium:selenium-java:3.141.59") {
@@ -292,7 +293,7 @@ configure(allprojects) { project ->
 			maven { url 'https://maven.aliyun.com/nexus/content/repositories/jcenter'}
 			mavenCentral()
 			maven { url "https://repo.spring.io/libs-spring-framework-build" }
-			maven { url "https://repo.spring.io/milestone" } // Reactor
+			maven { url "https://repo.spring.io/snapshot" } // Reactor
 		}
 	}
 	configurations.all {
@@ -341,7 +342,7 @@ configure([rootProject] + javaProjects) { project ->
 	}
 
 	checkstyle {
-		toolVersion = "8.36.1"
+		toolVersion = "8.36.2"
 		configDirectory.set(rootProject.file("src/checkstyle"))
 	}
 
